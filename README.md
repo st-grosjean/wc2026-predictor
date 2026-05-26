@@ -29,6 +29,7 @@ Pour l'obtenir / To get it :
    Place `results.csv` in the `data/` folder
 
 Sans ce fichier : l'app fonctionne avec les coefficients de fallback intégrés mais les prédictions seront moins précises
+
 Without this file : the app works with built-in fallback coefficients but predictions will be less accurate.
 
 ---
@@ -58,7 +59,7 @@ uv run streamlit run app.py
 
 | Étape | Description (FR) | Description (EN) |
 |-------|-----------------|-----------------|
-| **1 - Coefficients** | Récupère les matchs via l'API football-data.org (ou fallback JSON) et calcule les coefficients att/def pondérés temporellement | Fetches matches via football-data.org API (or JSON fallback) and computes time-weighted att/def coefficients |
+| **1 - Coefficients** | Récupère les matchs via l'API football-data.org et/ou le .csv de Kaggle (ou fallback JSON) et calcule les coefficients att/def pondérés temporellement | Fetches matches via football-data.org API and/or .csv from Kaggle (or JSON fallback) and computes time-weighted att/def coefficients |
 | **2 - Calibration** | Ajustement Dixon-Coles par MLE (L-BFGS-B via scipy) - affiche les métriques avant/après calibration | Dixon-Coles MLE calibration (L-BFGS-B via scipy) - shows before/after metrics |
 | **3 - Simulation** | Monte Carlo vectorisé (jusqu'à 1 000 000 simulations) sur l'intégralité du tournoi - résultats en 4 sous-onglets | Vectorised Monte Carlo (up to 1 000 000 simulations) over the full tournament - results in 4 sub-tabs |
 
