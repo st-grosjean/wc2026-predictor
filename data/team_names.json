@@ -1,0 +1,195 @@
+{
+  "_note": "Official team names in 7 languages. 'en' is the canonical key (same as teams.json). Teams keep their official FIFA name; common local variants used for fr/es/de/pt/ja/ko.",
+  "Mexico": {
+    "fr": "Mexique", "en": "Mexico", "pt": "México", "es": "México",
+    "de": "Mexiko", "ja": "メキシコ", "ko": "멕시코"
+  },
+  "South Africa": {
+    "fr": "Afrique du Sud", "en": "South Africa", "pt": "África do Sul", "es": "Sudáfrica",
+    "de": "Südafrika", "ja": "南アフリカ", "ko": "남아프리카"
+  },
+  "South Korea": {
+    "fr": "Corée du Sud", "en": "South Korea", "pt": "Coreia do Sul", "es": "Corea del Sur",
+    "de": "Südkorea", "ja": "韓国", "ko": "대한민국"
+  },
+  "Czech Republic": {
+    "fr": "République tchèque", "en": "Czech Republic", "pt": "República Checa", "es": "República Checa",
+    "de": "Tschechien", "ja": "チェコ", "ko": "체코"
+  },
+  "Canada": {
+    "fr": "Canada", "en": "Canada", "pt": "Canadá", "es": "Canadá",
+    "de": "Kanada", "ja": "カナダ", "ko": "캐나다"
+  },
+  "Switzerland": {
+    "fr": "Suisse", "en": "Switzerland", "pt": "Suíça", "es": "Suiza",
+    "de": "Schweiz", "ja": "スイス", "ko": "스위스"
+  },
+  "Qatar": {
+    "fr": "Qatar", "en": "Qatar", "pt": "Catar", "es": "Catar",
+    "de": "Katar", "ja": "カタール", "ko": "카타르"
+  },
+  "Bosnia-Herzegovina": {
+    "fr": "Bosnie-Herzégovine", "en": "Bosnia-Herzegovina", "pt": "Bósnia-Herzegovina", "es": "Bosnia-Herzegovina",
+    "de": "Bosnien-Herzegowina", "ja": "ボスニア・ヘルツェゴビナ", "ko": "보스니아 헤르체고비나"
+  },
+  "Brazil": {
+    "fr": "Brésil", "en": "Brazil", "pt": "Brasil", "es": "Brasil",
+    "de": "Brasilien", "ja": "ブラジル", "ko": "브라질"
+  },
+  "Morocco": {
+    "fr": "Maroc", "en": "Morocco", "pt": "Marrocos", "es": "Marruecos",
+    "de": "Marokko", "ja": "モロッコ", "ko": "모로코"
+  },
+  "Scotland": {
+    "fr": "Écosse", "en": "Scotland", "pt": "Escócia", "es": "Escocia",
+    "de": "Schottland", "ja": "スコットランド", "ko": "스코틀랜드"
+  },
+  "Haiti": {
+    "fr": "Haïti", "en": "Haiti", "pt": "Haiti", "es": "Haití",
+    "de": "Haiti", "ja": "ハイチ", "ko": "아이티"
+  },
+  "USA": {
+    "fr": "États-Unis", "en": "USA", "pt": "EUA", "es": "EE. UU.",
+    "de": "USA", "ja": "アメリカ", "ko": "미국"
+  },
+  "Paraguay": {
+    "fr": "Paraguay", "en": "Paraguay", "pt": "Paraguai", "es": "Paraguay",
+    "de": "Paraguay", "ja": "パラグアイ", "ko": "파라과이"
+  },
+  "Australia": {
+    "fr": "Australie", "en": "Australia", "pt": "Austrália", "es": "Australia",
+    "de": "Australien", "ja": "オーストラリア", "ko": "호주"
+  },
+  "Turkey": {
+    "fr": "Turquie", "en": "Turkey", "pt": "Turquia", "es": "Turquía",
+    "de": "Türkei", "ja": "トルコ", "ko": "터키"
+  },
+  "Germany": {
+    "fr": "Allemagne", "en": "Germany", "pt": "Alemanha", "es": "Alemania",
+    "de": "Deutschland", "ja": "ドイツ", "ko": "독일"
+  },
+  "Curaçao": {
+    "fr": "Curaçao", "en": "Curaçao", "pt": "Curaçao", "es": "Curazao",
+    "de": "Curaçao", "ja": "キュラソー", "ko": "퀴라소"
+  },
+  "Ivory Coast": {
+    "fr": "Côte d'Ivoire", "en": "Ivory Coast", "pt": "Costa do Marfim", "es": "Costa de Marfil",
+    "de": "Elfenbeinküste", "ja": "コートジボワール", "ko": "코트디부아르"
+  },
+  "Ecuador": {
+    "fr": "Équateur", "en": "Ecuador", "pt": "Equador", "es": "Ecuador",
+    "de": "Ecuador", "ja": "エクアドル", "ko": "에콰도르"
+  },
+  "Netherlands": {
+    "fr": "Pays-Bas", "en": "Netherlands", "pt": "Países Baixos", "es": "Países Bajos",
+    "de": "Niederlande", "ja": "オランダ", "ko": "네덜란드"
+  },
+  "Japan": {
+    "fr": "Japon", "en": "Japan", "pt": "Japão", "es": "Japón",
+    "de": "Japan", "ja": "日本", "ko": "일본"
+  },
+  "Tunisia": {
+    "fr": "Tunisie", "en": "Tunisia", "pt": "Tunísia", "es": "Túnez",
+    "de": "Tunesien", "ja": "チュニジア", "ko": "튀니지"
+  },
+  "Sweden": {
+    "fr": "Suède", "en": "Sweden", "pt": "Suécia", "es": "Suecia",
+    "de": "Schweden", "ja": "スウェーデン", "ko": "스웨덴"
+  },
+  "Belgium": {
+    "fr": "Belgique", "en": "Belgium", "pt": "Bélgica", "es": "Bélgica",
+    "de": "Belgien", "ja": "ベルギー", "ko": "벨기에"
+  },
+  "Egypt": {
+    "fr": "Égypte", "en": "Egypt", "pt": "Egito", "es": "Egipto",
+    "de": "Ägypten", "ja": "エジプト", "ko": "이집트"
+  },
+  "Iran": {
+    "fr": "Iran", "en": "Iran", "pt": "Irã", "es": "Irán",
+    "de": "Iran", "ja": "イラン", "ko": "이란"
+  },
+  "New Zealand": {
+    "fr": "Nouvelle-Zélande", "en": "New Zealand", "pt": "Nova Zelândia", "es": "Nueva Zelanda",
+    "de": "Neuseeland", "ja": "ニュージーランド", "ko": "뉴질랜드"
+  },
+  "Spain": {
+    "fr": "Espagne", "en": "Spain", "pt": "Espanha", "es": "España",
+    "de": "Spanien", "ja": "スペイン", "ko": "스페인"
+  },
+  "Cape Verde": {
+    "fr": "Cap-Vert", "en": "Cape Verde", "pt": "Cabo Verde", "es": "Cabo Verde",
+    "de": "Kap Verde", "ja": "カーボベルデ", "ko": "카보베르데"
+  },
+  "Saudi Arabia": {
+    "fr": "Arabie saoudite", "en": "Saudi Arabia", "pt": "Arábia Saudita", "es": "Arabia Saudí",
+    "de": "Saudi-Arabien", "ja": "サウジアラビア", "ko": "사우디아라비아"
+  },
+  "Uruguay": {
+    "fr": "Uruguay", "en": "Uruguay", "pt": "Uruguai", "es": "Uruguay",
+    "de": "Uruguay", "ja": "ウルグアイ", "ko": "우루과이"
+  },
+  "France": {
+    "fr": "France", "en": "France", "pt": "França", "es": "Francia",
+    "de": "Frankreich", "ja": "フランス", "ko": "프랑스"
+  },
+  "Senegal": {
+    "fr": "Sénégal", "en": "Senegal", "pt": "Senegal", "es": "Senegal",
+    "de": "Senegal", "ja": "セネガル", "ko": "세네갈"
+  },
+  "Norway": {
+    "fr": "Norvège", "en": "Norway", "pt": "Noruega", "es": "Noruega",
+    "de": "Norwegen", "ja": "ノルウェー", "ko": "노르웨이"
+  },
+  "Iraq": {
+    "fr": "Irak", "en": "Iraq", "pt": "Iraque", "es": "Irak",
+    "de": "Irak", "ja": "イラク", "ko": "이라크"
+  },
+  "Argentina": {
+    "fr": "Argentine", "en": "Argentina", "pt": "Argentina", "es": "Argentina",
+    "de": "Argentinien", "ja": "アルゼンチン", "ko": "아르헨티나"
+  },
+  "Algeria": {
+    "fr": "Algérie", "en": "Algeria", "pt": "Argélia", "es": "Argelia",
+    "de": "Algerien", "ja": "アルジェリア", "ko": "알제리"
+  },
+  "Austria": {
+    "fr": "Autriche", "en": "Austria", "pt": "Áustria", "es": "Austria",
+    "de": "Österreich", "ja": "オーストリア", "ko": "오스트리아"
+  },
+  "Jordan": {
+    "fr": "Jordanie", "en": "Jordan", "pt": "Jordânia", "es": "Jordania",
+    "de": "Jordanien", "ja": "ヨルダン", "ko": "요르단"
+  },
+  "Portugal": {
+    "fr": "Portugal", "en": "Portugal", "pt": "Portugal", "es": "Portugal",
+    "de": "Portugal", "ja": "ポルトガル", "ko": "포르투갈"
+  },
+  "Colombia": {
+    "fr": "Colombie", "en": "Colombia", "pt": "Colômbia", "es": "Colombia",
+    "de": "Kolumbien", "ja": "コロンビア", "ko": "콜롬비아"
+  },
+  "Uzbekistan": {
+    "fr": "Ouzbékistan", "en": "Uzbekistan", "pt": "Uzbequistão", "es": "Uzbekistán",
+    "de": "Usbekistan", "ja": "ウズベキスタン", "ko": "우즈베키스탄"
+  },
+  "DR Congo": {
+    "fr": "RD Congo", "en": "DR Congo", "pt": "RD Congo", "es": "RD Congo",
+    "de": "DR Kongo", "ja": "コンゴ民主共和国", "ko": "콩고민주공화국"
+  },
+  "England": {
+    "fr": "Angleterre", "en": "England", "pt": "Inglaterra", "es": "Inglaterra",
+    "de": "England", "ja": "イングランド", "ko": "잉글랜드"
+  },
+  "Croatia": {
+    "fr": "Croatie", "en": "Croatia", "pt": "Croácia", "es": "Croacia",
+    "de": "Kroatien", "ja": "クロアチア", "ko": "크로아티아"
+  },
+  "Ghana": {
+    "fr": "Ghana", "en": "Ghana", "pt": "Gana", "es": "Ghana",
+    "de": "Ghana", "ja": "ガーナ", "ko": "가나"
+  },
+  "Panama": {
+    "fr": "Panama", "en": "Panama", "pt": "Panamá", "es": "Panamá",
+    "de": "Panama", "ja": "パナマ", "ko": "파나마"
+  }
+}
