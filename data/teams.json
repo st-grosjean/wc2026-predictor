@@ -1,0 +1,266 @@
+{
+  "_note": "Groupes officiels — tirage FIFA du 5 décembre 2025, Kennedy Center, Washington D.C. Équipes qualifiées confirmées au 1er avril 2026 (Iraq et RD Congo via barrages intercontinentaux). att/def = ratings de départ, calibrés par le module training.py. elo = ELO approximatif eloratings.net (janv. 2026).",
+  "_sources": [
+    "https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026/articles/final-draw-results",
+    "https://en.wikipedia.org/wiki/2026_FIFA_World_Cup",
+    "https://www.eloratings.net/"
+  ],
+  "groups": {
+    "A": ["Mexico",      "South Africa",      "South Korea",  "Czech Republic"],
+    "B": ["Canada",      "Switzerland",        "Qatar",        "Bosnia-Herzegovina"],
+    "C": ["Brazil",      "Morocco",            "Scotland",     "Haiti"],
+    "D": ["USA",         "Paraguay",           "Australia",    "Turkey"],
+    "E": ["Germany",     "Curaçao",            "Ivory Coast",  "Ecuador"],
+    "F": ["Netherlands", "Japan",              "Tunisia",      "Sweden"],
+    "G": ["Belgium",     "Egypt",              "Iran",         "New Zealand"],
+    "H": ["Spain",       "Cape Verde",         "Saudi Arabia", "Uruguay"],
+    "I": ["France",      "Senegal",            "Norway",       "Iraq"],
+    "J": ["Argentina",   "Algeria",            "Austria",      "Jordan"],
+    "K": ["Portugal",    "Colombia",           "Uzbekistan",   "DR Congo"],
+    "L": ["England",     "Croatia",            "Ghana",        "Panama"]
+  },
+  "teams": {
+    "Mexico": {
+      "confederation": "CONCACAF", "fifa_rank": 16, "elo": 1865,
+      "att_rating": 1.22, "def_rating": 0.91, "n_matches": 0,
+      "api_id": 758, "group": "A"
+    },
+    "South Africa": {
+      "confederation": "CAF", "fifa_rank": 60, "elo": 1755,
+      "att_rating": 1.00, "def_rating": 1.01, "n_matches": 0,
+      "api_id": null, "group": "A"
+    },
+    "South Korea": {
+      "confederation": "AFC", "fifa_rank": 18, "elo": 1850,
+      "att_rating": 1.22, "def_rating": 0.90, "n_matches": 0,
+      "api_id": 836, "group": "A"
+    },
+    "Czech Republic": {
+      "confederation": "UEFA", "fifa_rank": 30, "elo": 1810,
+      "att_rating": 1.12, "def_rating": 0.93, "n_matches": 0,
+      "api_id": 798, "group": "A"
+    },
+    "Canada": {
+      "confederation": "CONCACAF", "fifa_rank": 37, "elo": 1785,
+      "att_rating": 1.18, "def_rating": 0.93, "n_matches": 0,
+      "api_id": 772, "group": "B"
+    },
+    "Switzerland": {
+      "confederation": "UEFA", "fifa_rank": 22, "elo": 1860,
+      "att_rating": 1.22, "def_rating": 0.89, "n_matches": 0,
+      "api_id": 788, "group": "B"
+    },
+    "Qatar": {
+      "confederation": "AFC", "fifa_rank": 65, "elo": 1670,
+      "att_rating": 0.90, "def_rating": 1.07, "n_matches": 0,
+      "api_id": null, "group": "B"
+    },
+    "Bosnia-Herzegovina": {
+      "confederation": "UEFA", "fifa_rank": 68, "elo": 1760,
+      "att_rating": 1.08, "def_rating": 0.96, "n_matches": 0,
+      "api_id": null, "group": "B"
+    },
+    "Brazil": {
+      "confederation": "CONMEBOL", "fifa_rank": 5, "elo": 2020,
+      "att_rating": 1.60, "def_rating": 0.76, "n_matches": 0,
+      "api_id": 764, "group": "C"
+    },
+    "Morocco": {
+      "confederation": "CAF", "fifa_rank": 12, "elo": 1895,
+      "att_rating": 1.28, "def_rating": 0.82, "n_matches": 0,
+      "api_id": 1020, "group": "C"
+    },
+    "Scotland": {
+      "confederation": "UEFA", "fifa_rank": 28, "elo": 1785,
+      "att_rating": 1.10, "def_rating": 0.95, "n_matches": 0,
+      "api_id": 769, "group": "C"
+    },
+    "Haiti": {
+      "confederation": "CONCACAF", "fifa_rank": 95, "elo": 1480,
+      "att_rating": 0.88, "def_rating": 1.08, "n_matches": 0,
+      "api_id": null, "group": "C"
+    },
+    "USA": {
+      "confederation": "CONCACAF", "fifa_rank": 11, "elo": 1875,
+      "att_rating": 1.20, "def_rating": 0.91, "n_matches": 0,
+      "api_id": 768, "group": "D"
+    },
+    "Paraguay": {
+      "confederation": "CONMEBOL", "fifa_rank": 61, "elo": 1790,
+      "att_rating": 1.10, "def_rating": 0.95, "n_matches": 0,
+      "api_id": 781, "group": "D"
+    },
+    "Australia": {
+      "confederation": "AFC", "fifa_rank": 24, "elo": 1820,
+      "att_rating": 1.08, "def_rating": 0.96, "n_matches": 0,
+      "api_id": 840, "group": "D"
+    },
+    "Turkey": {
+      "confederation": "UEFA", "fifa_rank": 19, "elo": 1845,
+      "att_rating": 1.25, "def_rating": 0.89, "n_matches": 0,
+      "api_id": 839, "group": "D"
+    },
+    "Germany": {
+      "confederation": "UEFA", "fifa_rank": 4, "elo": 1950,
+      "att_rating": 1.48, "def_rating": 0.83, "n_matches": 0,
+      "api_id": 759, "group": "E"
+    },
+    "Curaçao": {
+      "confederation": "CONCACAF", "fifa_rank": 82, "elo": 1450,
+      "att_rating": 0.75, "def_rating": 1.15, "n_matches": 0,
+      "api_id": null, "group": "E"
+    },
+    "Ivory Coast": {
+      "confederation": "CAF", "fifa_rank": 20, "elo": 1800,
+      "att_rating": 1.12, "def_rating": 0.94, "n_matches": 0,
+      "api_id": 1023, "group": "E"
+    },
+    "Ecuador": {
+      "confederation": "CONMEBOL", "fifa_rank": 32, "elo": 1825,
+      "att_rating": 1.18, "def_rating": 0.4, "n_matches": 0,
+      "api_id": 780, "group": "E"
+    },
+    "Netherlands": {
+      "confederation": "UEFA", "fifa_rank": 8, "elo": 1960,
+      "att_rating": 1.45, "def_rating": 0.84, "n_matches": 0,
+      "api_id": 771, "group": "F"
+    },
+    "Japan": {
+      "confederation": "AFC", "fifa_rank": 15, "elo": 1885,
+      "att_rating": 1.28, "def_rating": 0.86, "n_matches": 0,
+      "api_id": 827, "group": "F"
+    },
+    "Tunisia": {
+      "confederation": "CAF", "fifa_rank": 34, "elo": 1790,
+      "att_rating": 1.05, "def_rating": 0.4, "n_matches": 0,
+      "api_id": 1036, "group": "F"
+    },
+    "Sweden": {
+      "confederation": "UEFA", "fifa_rank": 26, "elo": 1835,
+      "att_rating": 1.20, "def_rating": 0.90, "n_matches": 0,
+      "api_id": 808, "group": "F"
+    },
+    "Belgium": {
+      "confederation": "UEFA", "fifa_rank": 9, "elo": 1920,
+      "att_rating": 1.38, "def_rating": 0.86, "n_matches": 0,
+      "api_id": 805, "group": "G"
+    },
+    "Egypt": {
+      "confederation": "CAF", "fifa_rank": 43, "elo": 1795,
+      "att_rating": 1.08, "def_rating": 0.96, "n_matches": 0,
+      "api_id": 1017, "group": "G"
+    },
+    "Iran": {
+      "confederation": "AFC", "fifa_rank": 21, "elo": 1800,
+      "att_rating": 1.10, "def_rating": 0.93, "n_matches": 0,
+      "api_id": 826, "group": "G"
+    },
+    "New Zealand": {
+      "confederation": "OFC", "fifa_rank": 93, "elo": 1715,
+      "att_rating": 0.4, "def_rating": 1.10, "n_matches": 0,
+      "api_id": null, "group": "G"
+    },
+    "Spain": {
+      "confederation": "UEFA", "fifa_rank": 1, "elo": 2050,
+      "att_rating": 1.62, "def_rating": 0.74, "n_matches": 0,
+      "api_id": 760, "group": "H"
+    },
+    "Cape Verde": {
+      "confederation": "CAF", "fifa_rank": 84, "elo": 1725,
+      "att_rating": 0.4, "def_rating": 1.05, "n_matches": 0,
+      "api_id": null, "group": "H"
+    },
+    "Saudi Arabia": {
+      "confederation": "AFC", "fifa_rank": 58, "elo": 1620,
+      "att_rating": 1.05, "def_rating": 0.97, "n_matches": 0,
+      "api_id": 833, "group": "H"
+    },
+    "Uruguay": {
+      "confederation": "CONMEBOL", "fifa_rank": 10, "elo": 1900,
+      "att_rating": 1.30, "def_rating": 0.86, "n_matches": 0,
+      "api_id": 803, "group": "H"
+    },
+    "France": {
+      "confederation": "UEFA", "fifa_rank": 2, "elo": 2005,
+      "att_rating": 1.68, "def_rating": 0.72, "n_matches": 0,
+      "api_id": 773, "group": "I"
+    },
+    "Senegal": {
+      "confederation": "CAF", "fifa_rank": 17, "elo": 1845,
+      "att_rating": 1.22, "def_rating": 0.90, "n_matches": 0,
+      "api_id": 1030, "group": "I"
+    },
+    "Norway": {
+      "confederation": "UEFA", "fifa_rank": 25, "elo": 1860,
+      "att_rating": 1.38, "def_rating": 0.88, "n_matches": 0,
+      "api_id": 761, "group": "I"
+    },
+    "Iraq": {
+      "confederation": "AFC", "fifa_rank": 68, "elo": 1590,
+      "att_rating": 1.00, "def_rating": 1.02, "n_matches": 0,
+      "api_id": null, "group": "I",
+      "_note": "Qualifié via barrage intercontinental (bat Bolivie, 1er avril 2026)"
+    },
+    "Argentina": {
+      "confederation": "CONMEBOL", "fifa_rank": 6, "elo": 2140,
+      "att_rating": 1.72, "def_rating": 0.73, "n_matches": 0,
+      "api_id": 762, "group": "J"
+    },
+    "Algeria": {
+      "confederation": "CAF", "fifa_rank": 50, "elo": 1800,
+      "att_rating": 1.12, "def_rating": 0.93, "n_matches": 0,
+      "api_id": 1013, "group": "J"
+    },
+    "Austria": {
+      "confederation": "UEFA", "fifa_rank": 23, "elo": 1840,
+      "att_rating": 1.25, "def_rating": 0.89, "n_matches": 0,
+      "api_id": 816, "group": "J"
+    },
+    "Jordan": {
+      "confederation": "AFC", "fifa_rank": 69, "elo": 1685,
+      "att_rating": 0.98, "def_rating": 1.03, "n_matches": 0,
+      "api_id": null, "group": "J"
+    },
+    "Portugal": {
+      "confederation": "UEFA", "fifa_rank": 7, "elo": 1960,
+      "att_rating": 1.60, "def_rating": 0.81, "n_matches": 0,
+      "api_id": 765, "group": "K"
+    },
+    "Colombia": {
+      "confederation": "CONMEBOL", "fifa_rank": 13, "elo": 1910,
+      "att_rating": 1.38, "def_rating": 0.87, "n_matches": 0,
+      "api_id": 779, "group": "K"
+    },
+    "Uzbekistan": {
+      "confederation": "AFC", "fifa_rank": 75, "elo": 1560,
+      "att_rating": 0.98, "def_rating": 1.03, "n_matches": 0,
+      "api_id": null, "group": "K"
+    },
+    "DR Congo": {
+      "confederation": "CAF", "fifa_rank": 49, "elo": 1740,
+      "att_rating": 0.4, "def_rating": 1.00, "n_matches": 0,
+      "api_id": null, "group": "K",
+      "_note": "Qualifié via barrage intercontinental (1er avril 2026)"
+    },
+    "England": {
+      "confederation": "UEFA", "fifa_rank": 3, "elo": 1970,
+      "att_rating": 1.55, "def_rating": 0.79, "n_matches": 0,
+      "api_id": 770, "group": "L"
+    },
+    "Croatia": {
+      "confederation": "UEFA", "fifa_rank": 14, "elo": 1885,
+      "att_rating": 1.30, "def_rating": 0.86, "n_matches": 0,
+      "api_id": 799, "group": "L"
+    },
+    "Ghana": {
+      "confederation": "CAF", "fifa_rank": 55, "elo": 1760,
+      "att_rating": 1.05, "def_rating": 0.97, "n_matches": 0,
+      "api_id": null, "group": "L"
+    },
+    "Panama": {
+      "confederation": "CONCACAF", "fifa_rank": 52, "elo": 1735,
+      "att_rating": 1.05, "def_rating": 0.97, "n_matches": 0,
+      "api_id": null, "group": "L"
+    }
+  }
+}

@@ -1,0 +1,44 @@
+# Secrets
+.env
+.env.local
+.env.*.local
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Data files (not committed — see README for download instructions)
+data/results.csv
+data/matches_cache.json
+data/group_results.json
+data/ko_results.json
+data/user_prefs.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Claude Code local settings
+.claude/
