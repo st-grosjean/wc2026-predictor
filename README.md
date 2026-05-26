@@ -7,7 +7,7 @@ FIFA World Cup 2026 simulator using Monte Carlo + Dixon-Coles Poisson model.
 
 ## Prérequis / Prerequisites
 
-- [uv](https://docs.astral.sh/uv/) — gestionnaire de paquets Python
+- [uv](https://docs.astral.sh/uv/) - gestionnaire de paquets Python
 - Python 3.12+
 
 ## Installation
@@ -58,9 +58,9 @@ uv run streamlit run app.py
 
 | Étape | Description (FR) | Description (EN) |
 |-------|-----------------|-----------------|
-| **1 — Coefficients** | Récupère les matchs via l'API football-data.org (ou fallback JSON) et calcule les coefficients att/def pondérés temporellement | Fetches matches via football-data.org API (or JSON fallback) and computes time-weighted att/def coefficients |
-| **2 — Calibration** | Ajustement Dixon-Coles par MLE (L-BFGS-B via scipy) — affiche les métriques avant/après calibration | Dixon-Coles MLE calibration (L-BFGS-B via scipy) — shows before/after metrics |
-| **3 — Simulation** | Monte Carlo vectorisé (jusqu'à 1 000 000 simulations) sur l'intégralité du tournoi — résultats en 4 sous-onglets | Vectorised Monte Carlo (up to 1 000 000 simulations) over the full tournament — results in 4 sub-tabs |
+| **1 - Coefficients** | Récupère les matchs via l'API football-data.org (ou fallback JSON) et calcule les coefficients att/def pondérés temporellement | Fetches matches via football-data.org API (or JSON fallback) and computes time-weighted att/def coefficients |
+| **2 - Calibration** | Ajustement Dixon-Coles par MLE (L-BFGS-B via scipy) - affiche les métriques avant/après calibration | Dixon-Coles MLE calibration (L-BFGS-B via scipy) - shows before/after metrics |
+| **3 - Simulation** | Monte Carlo vectorisé (jusqu'à 1 000 000 simulations) sur l'intégralité du tournoi - résultats en 4 sous-onglets | Vectorised Monte Carlo (up to 1 000 000 simulations) over the full tournament - results in 4 sub-tabs |
 
 ---
 
