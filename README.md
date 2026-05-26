@@ -28,7 +28,8 @@ Pour l'obtenir / To get it :
 4. Placer `results.csv` dans le dossier `data/`  
    Place `results.csv` in the `data/` folder
 
-Sans ce fichier / Without this file : l'app fonctionne avec les coefficients de fallback intégrés mais les prédictions seront moins précises / the app works with built-in fallback coefficients but predictions will be less accurate.
+Sans ce fichier : l'app fonctionne avec les coefficients de fallback intégrés mais les prédictions seront moins précises
+Without this file : the app works with built-in fallback coefficients but predictions will be less accurate.
 
 ---
 
