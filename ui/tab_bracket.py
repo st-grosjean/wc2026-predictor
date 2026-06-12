@@ -4,6 +4,7 @@ from __future__ import annotations
 import streamlit as st
 
 import config
+from src.fetcher import fetch_live_wc_scores
 from src.i18n import t
 from src.tournament import R32_BRACKET, R16_PAIRS, QF_PAIRS, SF_PAIRS
 from ui.common import (
@@ -67,52 +68,57 @@ def render_tab_bracket(lang: str) -> None:
                 if not config.API_KEY:
                     st.warning(t("warn_api_key", lang))
                 else:
-                    try:
-                        import requests as _req
-                        _resp = _req.get(
-                            "https://api.football-data.org/v4/competitions/2000/matches",
-                            headers={"X-Auth-Token": config.API_KEY},
-                            timeout=10,
-                        )
-                        if _resp.status_code == 200:
-                            _api_ms = _resp.json().get("matches", [])
-                            _api_lkp: dict[tuple, tuple] = {}
-                            for _am in _api_ms:
-                                if _am.get("status") != "FINISHED":
-                                    continue
-                                _sc = _am.get("score", {}).get("fullTime", {})
-                                _gh, _ga = _sc.get("home"), _sc.get("away")
-                                if _gh is None or _ga is None:
-                                    continue
-                                _ahn = _am.get("homeTeam", {}).get("name", "")
-                                _aan = _am.get("awayTeam", {}).get("name", "")
-                                _api_lkp[(_ahn, _aan)] = (int(_gh), int(_ga))
-
-                            _stages_items = [
-                                ("r32", _t32), ("r16", _t16),
-                                ("qf",  _tqf), ("sf",  _tsf),
+                    with st.spinner(t("live_fetching", lang)):
+                        try:
+                            _live = fetch_live_wc_scores()
+                            _api_lkp: dict[tuple, tuple] = {
+                                (_m["home_team"], _m["away_team"]): (_m["home_goals"], _m["away_goals"])
+                                for _m in _live
+                                if _m["status"] == "FINISHED" and _m["home_goals"] is not None
+                            }
+                            _in_play_ko = [
+                                _m for _m in _live
+                                if _m["status"] in ("IN_PLAY", "PAUSED")
+                                and _m["home_goals"] is not None
                             ]
+
+                            def _apply_score(stg: str, ki, th: str, ta: str) -> bool:
+                                _sc = _api_lkp.get((th, ta)) or _api_lkp.get((ta, th))
+                                if not _sc:
+                                    return False
+                                _entry = _ko[stg] if ki is None else _ko[stg][ki]
+                                if _entry.get("played"):
+                                    return False
+                                _hg_new, _ag_new = _sc
+                                if _api_lkp.get((ta, th)) and not _api_lkp.get((th, ta)):
+                                    _hg_new, _ag_new = _ag_new, _hg_new
+                                _entry.update({"goals_h": _hg_new, "goals_a": _ag_new, "played": True})
+                                return True
+
                             _updated = 0
-                            for _stg, _teams_list in _stages_items:
+                            for _stg, _teams_list in [
+                                ("r32", _t32), ("r16", _t16), ("qf", _tqf), ("sf", _tsf),
+                            ]:
                                 for _ki, (_th, _ta) in enumerate(_teams_list):
-                                    _score = _api_lkp.get((_th, _ta)) or _api_lkp.get((_ta, _th))
-                                    if _score and not _ko[_stg][_ki].get("played"):
-                                        _hg_new, _ag_new = _score
-                                        if _api_lkp.get((_ta, _th)):
-                                            _hg_new, _ag_new = _ag_new, _hg_new
-                                        _ko[_stg][_ki].update({
-                                            "goals_h": _hg_new, "goals_a": _ag_new, "played": True
-                                        })
+                                    if _apply_score(_stg, _ki, _th, _ta):
                                         _updated += 1
+                            for _stg, (_th, _ta) in [("final", _tfin), ("third_place", _t3rd)]:
+                                if _apply_score(_stg, None, _th, _ta):
+                                    _updated += 1
+
+                            st.session_state["ko_live_in_play"] = _in_play_ko
                             _save_ko(_ko)
                             st.success(t("api_updated", lang, n=_updated))
                             if _updated:
                                 _ko_ch = True
                                 st.rerun()
-                        else:
-                            st.error(f"API {_resp.status_code} : {_resp.text[:200]}")
-                    except Exception as _e:
-                        st.error(t("error_fetch_ko", lang, msg=_e))
+                        except Exception as _e:
+                            st.error(t("error_fetch_ko", lang, msg=_e))
+
+        for _lm in st.session_state.get("ko_live_in_play", []):
+            st.info(t("live_in_play", lang,
+                      home=_lm["home_team"], hg=_lm["home_goals"],
+                      ag=_lm["away_goals"], away=_lm["away_team"]))
 
         st.subheader(t("ko_r32_header", lang))
         _cols32 = st.columns(2)

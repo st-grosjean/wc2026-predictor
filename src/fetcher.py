@@ -396,6 +396,72 @@ def load_csv_into_cache(
     return all_matches
 
 
+def fetch_live_wc_scores() -> list[dict]:
+    """
+    Fetch all WC 2026 matches (any status) from football-data.org v4.
+
+    Returns a list of dicts with:
+      match_id, utc_date, home_team, away_team, status, stage, home_goals, away_goals
+
+    status: SCHEDULED | TIMED | IN_PLAY | PAUSED | FINISHED | ...
+    home_goals / away_goals: None when not yet played; partial score for IN_PLAY/PAUSED;
+                             final score for FINISHED.
+
+    Raises RuntimeError on network or API errors.
+    """
+    api_key = config.API_KEY
+    if not api_key:
+        raise ValueError("Clé API football-data.org manquante.")
+
+    url = f"{config.API_BASE_URL}/competitions/WC/matches"
+    try:
+        resp = requests.get(
+            url,
+            params={"season": 2026},
+            headers={"X-Auth-Token": api_key, "Accept": "application/json"},
+            timeout=15,
+        )
+    except requests.RequestException as exc:
+        raise RuntimeError(f"Erreur réseau : {exc}") from exc
+
+    if resp.status_code == 429:
+        raise RuntimeError("Limite d'appels API atteinte (429). Réessayez dans 1 minute.")
+    if resp.status_code == 403:
+        raise RuntimeError("API 403 — compétition WC non disponible sur ce plan.")
+    if resp.status_code != 200:
+        raise RuntimeError(f"API {resp.status_code} : {resp.text[:200]}")
+
+    result: list[dict] = []
+    for m in resp.json().get("matches", []):
+        home   = _canonicalize((m.get("homeTeam") or {}).get("name", ""))
+        away   = _canonicalize((m.get("awayTeam") or {}).get("name", ""))
+        status = m.get("status", "SCHEDULED")
+        stage  = m.get("stage", "GROUP_STAGE")
+        score  = m.get("score") or {}
+        ft     = score.get("fullTime") or {}
+        ht     = score.get("halfTime") or {}
+
+        hg = ag = None
+        if status == "FINISHED":
+            hg, ag = ft.get("home"), ft.get("away")
+        elif status in ("IN_PLAY", "PAUSED"):
+            hg = ft.get("home") if ft.get("home") is not None else ht.get("home")
+            ag = ft.get("away") if ft.get("away") is not None else ht.get("away")
+
+        result.append({
+            "match_id":   m.get("id"),
+            "utc_date":   (m.get("utcDate") or "")[:10],
+            "home_team":  home,
+            "away_team":  away,
+            "status":     status,
+            "stage":      stage,
+            "home_goals": int(hg) if hg is not None else None,
+            "away_goals": int(ag) if ag is not None else None,
+        })
+
+    return result
+
+
 def matches_by_team(matches: list[dict]) -> dict[str, list[dict]]:
     """Index match list by team name (each match appears under both teams)."""
     idx: dict[str, list[dict]] = {}

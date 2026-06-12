@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import streamlit as st
 
+import config
+from src.fetcher import fetch_live_wc_scores
 from src.i18n import t
 from ui.common import (
     _group_standings, _init_gr, _load_gr, _load_schedule, _save_gr,
@@ -19,6 +21,18 @@ def render_tab_groups(lang: str) -> None:
         if not _gr_data or set(_gr_data.keys()) != set(_groups_gs.keys()):
             _gr_data = _init_gr(_groups_gs)
             _save_gr(_gr_data)
+
+        # Pre-render sync: push disk scores into widget session-state keys so the
+        # _gr_changed path cannot overwrite a live-score fetch on the next rerun.
+        # Must run before any widget is instantiated (Streamlit forbids setting a
+        # widget's key in session state after the widget has already rendered).
+        if st.session_state.pop("_reload_scores", False):
+            for _sg, _sd in _gr_data.items():
+                for _smi, _sm in enumerate(_sd["matches"]):
+                    _smk = f"{_sg}_{_smi}"
+                    st.session_state[f"ghg_{_smk}"] = int(_sm["home_goals"]) if _sm["home_goals"] is not None else 0
+                    st.session_state[f"gag_{_smk}"] = int(_sm["away_goals"]) if _sm["away_goals"] is not None else 0
+                    st.session_state[f"gpl_{_smk}"] = bool(_sm.get("played", False))
 
         _sched_lkp = _load_schedule()
         _gr_changed = False
@@ -74,13 +88,19 @@ def render_tab_groups(lang: str) -> None:
                         _chg = int(_m["home_goals"]) if _m["home_goals"] is not None else 0
                         _cag = int(_m["away_goals"]) if _m["away_goals"] is not None else 0
                         _cpl = bool(_m.get("played", False))
-                        _nhg = _mcb.number_input("h", min_value=0, max_value=99, value=_chg, step=1,
+                        if f"ghg_{_mk}" not in st.session_state:
+                            st.session_state[f"ghg_{_mk}"] = _chg
+                        if f"gag_{_mk}" not in st.session_state:
+                            st.session_state[f"gag_{_mk}"] = _cag
+                        if f"gpl_{_mk}" not in st.session_state:
+                            st.session_state[f"gpl_{_mk}"] = _cpl
+                        _nhg = _mcb.number_input("h", min_value=0, max_value=99, step=1,
                                                  key=f"ghg_{_mk}", label_visibility="collapsed")
                         _mcc.markdown("<div style='text-align:center;padding-top:6px'>-</div>",
                                       unsafe_allow_html=True)
-                        _nag = _mcd.number_input("a", min_value=0, max_value=99, value=_cag, step=1,
+                        _nag = _mcd.number_input("a", min_value=0, max_value=99, step=1,
                                                  key=f"gag_{_mk}", label_visibility="collapsed")
-                        _npl = _mce.checkbox("✓", value=_cpl, key=f"gpl_{_mk}")
+                        _npl = _mce.checkbox("✓", key=f"gpl_{_mk}")
                         if _nhg != _chg or _nag != _cag or _npl != _cpl:
                             _gr_data[_grp]["matches"][_mi].update(
                                 {"home_goals": int(_nhg), "away_goals": int(_nag), "played": _npl}
@@ -88,7 +108,48 @@ def render_tab_groups(lang: str) -> None:
                             _gr_changed = True
 
                     if st.button(t("btn_fetch_group", lang, grp=_grp), key=f"fetch_gr_{_grp}"):
-                        st.info(t("fetch_not_impl", lang))
+                        if not config.API_KEY:
+                            st.warning(t("warn_api_key", lang))
+                        else:
+                            with st.spinner(t("live_fetching", lang)):
+                                try:
+                                    _live = fetch_live_wc_scores()
+                                    _grp_teams = set(_teams_g)
+                                    _n_upd = 0
+                                    _in_play: list[dict] = []
+                                    for _lm in _live:
+                                        if _lm["stage"] != "GROUP_STAGE":
+                                            continue
+                                        if (_lm["home_team"] not in _grp_teams
+                                                and _lm["away_team"] not in _grp_teams):
+                                            continue
+                                        for _mi2, _m2 in enumerate(_grp_ms):
+                                            if (_m2["home"] == _lm["home_team"]
+                                                    and _m2["away"] == _lm["away_team"]):
+                                                if (_lm["status"] == "FINISHED"
+                                                        and _lm["home_goals"] is not None):
+                                                    _gr_data[_grp]["matches"][_mi2].update({
+                                                        "home_goals": _lm["home_goals"],
+                                                        "away_goals": _lm["away_goals"],
+                                                        "played": True,
+                                                    })
+                                                    _n_upd += 1
+                                                elif (_lm["status"] in ("IN_PLAY", "PAUSED")
+                                                        and _lm["home_goals"] is not None):
+                                                    _in_play.append(_lm)
+                                                break
+                                    st.session_state[f"live_gr_{_grp}"] = _in_play
+                                    _save_gr(_gr_data)
+                                    st.success(t("api_updated", lang, n=_n_upd))
+                                    if _n_upd:
+                                        st.session_state["_reload_scores"] = True
+                                        st.rerun()
+                                except Exception as _exc:
+                                    st.error(t("error_fetch_ko", lang, msg=_exc))
+                    for _lm in st.session_state.get(f"live_gr_{_grp}", []):
+                        st.info(t("live_in_play", lang,
+                                  home=_lm["home_team"], hg=_lm["home_goals"],
+                                  ag=_lm["away_goals"], away=_lm["away_team"]))
 
         if _gr_changed:
             _save_gr(_gr_data)
