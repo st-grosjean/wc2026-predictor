@@ -5,7 +5,7 @@ import streamlit as st
 
 import config
 from src.fetcher import fetch_live_wc_scores
-from src.i18n import fmt_time_local, t
+from src.i18n import fmt_date, fmt_time_local, t
 from ui.common import (
     _group_standings, _init_gr, _load_gr, _load_schedule, _save_gr,
     load_teams_json,
@@ -74,15 +74,22 @@ def render_tab_groups(lang: str) -> None:
                         })
                     st.dataframe(pd.DataFrame(_srows), hide_index=True, height=185)
 
-                    for _mi, _m in enumerate(_grp_ms):
+                    _sorted_ms = sorted(
+                        enumerate(_grp_ms),
+                        key=lambda x: (
+                            _sched_lkp.get((x[1]["home"], x[1]["away"]), {}).get("date", "9999-99-99"),
+                            _sched_lkp.get((x[1]["home"], x[1]["away"]), {}).get("time_utc", "99:99"),
+                        ),
+                    )
+                    for _mi, _m in _sorted_ms:
                         _mk   = f"{_grp}_{_mi}"
                         _si   = _sched_lkp.get((_m["home"], _m["away"]), {})
                         _md_lbl = f"J{_si['matchday']} · " if _si.get("matchday") else ""
                         if _si.get("date") and _si.get("time_utc"):
                             _tz = st.session_state.get("tz", "Europe/Paris")
-                            _dt_lbl = fmt_time_local(_si["date"], _si["time_utc"], _tz, lang)
+                            _dt_lbl = f"{fmt_date(_si['date'], lang)} {fmt_time_local(_si['date'], _si['time_utc'], _tz, lang)}"
                         elif _si.get("date"):
-                            _dt_lbl = _si["date"]
+                            _dt_lbl = fmt_date(_si["date"], lang)
                         else:
                             _dt_lbl = ""
                         _vn_lbl = _si.get("venue", "").split(",")[0] if _si.get("venue") else ""
