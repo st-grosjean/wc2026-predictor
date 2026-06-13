@@ -370,6 +370,7 @@ def calibrate(
     custom_weights: dict | None = None,
     lambda_decay: float | None = None,
     mu: float | None = None,
+    l2_lambda: float | None = None,
     callback=None,
 ) -> dict:
     """
@@ -380,7 +381,7 @@ def calibrate(
     mu = mu or config.MU
     alpha  = config.LOSS_ALPHA
     beta   = config.LOSS_BETA
-    l2_lam = config.L2_LAMBDA
+    l2_lam = l2_lambda if l2_lambda is not None else config.L2_LAMBDA
     n = len(teams)
 
     train_matches = _filter_matches(matches, train_start, train_end)

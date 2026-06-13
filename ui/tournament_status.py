@@ -1,7 +1,9 @@
 """Tournament status banner — recalibration pipeline button."""
 from __future__ import annotations
 
+import json
 from datetime import datetime
+from pathlib import Path
 
 import streamlit as st
 
@@ -33,9 +35,9 @@ def render_tournament_status(lang: str) -> None:
     last_n   = st.session_state.get("last_recalib_n_played", -1)
     last_ts  = st.session_state.get("last_recalib_time")
 
-    if not has_sim:
+    if n_played == 0:
         status_md = f"🔴 **{t('status_pretournoi', lang)}**"
-    elif last_ts and last_n == n_played:
+    elif has_sim and last_ts and last_n == n_played:
         status_md = f"🟢 **{t('status_calibrated', lang, n=n_played, ts=last_ts)}**"
     else:
         status_md = f"🟡 **{t('status_update_avail', lang, n=n_played)}**"
@@ -49,7 +51,7 @@ def render_tournament_status(lang: str) -> None:
             key="btn_recalib_main",
         )
 
-    if not has_sim:
+    if n_played == 0 or not has_sim:
         st.info(t("guide_no_sim", lang))
 
     if clicked:
@@ -70,26 +72,58 @@ def _run_pipeline(lang: str, n_played: int) -> None:
     teams_list = list(teams_json["teams"].keys())
     matches    = st.session_state.get("matches", [])
 
-    if matches:
+    # Bug 1 fix: anchor L2 to calibrated coefficients, not raw Step-1 values
+    initial_coeffs = _active_coeffs() or st.session_state.get("coefficients", {})
+
+    # Bug 2 fix: load live WC2026 results and add to training data
+    _sched_lkp: dict[tuple, dict] = {}
+    _sched_path = Path("data/schedule.json")
+    if _sched_path.exists():
+        with _sched_path.open(encoding="utf-8") as _f:
+            for _sm in json.load(_f).get("group_matches", []):
+                _sched_lkp[(_sm["home"], _sm["away"])] = _sm
+                _sched_lkp[(_sm["away"], _sm["home"])] = _sm
+
+    live_matches: list[dict] = []
+    for _gd in _load_gr().values():
+        for _m in _gd.get("matches", []):
+            if not _m.get("played") or _m.get("home_goals") is None:
+                continue
+            _h, _a = _m["home"], _m["away"]
+            _si = _sched_lkp.get((_h, _a), {})
+            live_matches.append({
+                "home_team":        _h,
+                "away_team":        _a,
+                "home_goals":       int(_m["home_goals"]),
+                "away_goals":       int(_m["away_goals"]),
+                "date":             _si.get("date", "2026-06-15"),
+                "competition_type": "WC_LIVE",
+            })
+
+    augmented_matches = matches + live_matches
+
+    if augmented_matches:
         _step(t("recalib_step2", lang))
         try:
             from src.training import calibrate
+            _live_weights = {**config.MATCH_WEIGHTS, "WC_LIVE": config.LIVE_MATCH_WEIGHT}
             result = calibrate(
-                matches=matches,
+                matches=augmented_matches,
                 teams=teams_list,
-                initial_coeffs=st.session_state.get("coefficients", {}),
+                initial_coeffs=initial_coeffs,
                 train_start=config.TRAIN_START,
-                train_end=config.TRAIN_END,
+                train_end="2026-12-31",
                 val_start=config.VAL_START,
                 val_end=config.VAL_END,
+                custom_weights=_live_weights,
+                l2_lambda=config.LIVE_L2_LAMBDA,
             )
             calibrated = {
                 team_: {
                     "att_rating": result["att"].get(team_, 1.0),
                     "def_rating": result["def"].get(team_, 1.0),
-                    "n_matches":  st.session_state.get("coefficients", {}).get(
-                        team_, {}
-                    ).get("n_matches", 0),
+                    # Bug 3 fix: n_matches from active (calibrated) coefficients
+                    "n_matches":  initial_coeffs.get(team_, {}).get("n_matches", 0),
                 }
                 for team_ in teams_list
             }

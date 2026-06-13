@@ -51,6 +51,14 @@ LOSS_BETA  = 0.6   # weight of W/D/L outcome loss
 # L2 regularisation: penalises distance from the initial coefficient vector
 L2_LAMBDA = 0.3
 
+# Live recalibration (tournament_status pipeline)
+# Weight given to each live WC2026 result — lower than WORLD_CUP (2.0) so that
+# a handful of live matches doesn't override ~2000 historical data points.
+LIVE_MATCH_WEIGHT = 1.5
+# Stronger L2 during live recalibration: keeps coefficients close to the
+# pre-calibrated anchor even when live matches pull in a new direction.
+LIVE_L2_LAMBDA = 0.5
+
 # Max goals used in the outcome probability table (truncated bivariate Poisson)
 MAX_GOALS_OUTCOME = 8
 
