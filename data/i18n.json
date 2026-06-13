@@ -1,6 +1,7 @@
 {
   "fr": {
     "lang_selector": "🌐 Langue",
+    "tz_selector": "🕐 Fuseau horaire",
     "app_title": "🏆 WC 2026 Predictor — Monte Carlo + Poisson",
     "app_caption": "Simulateur de la Coupe du Monde 2026 • 48 équipes • 12 groupes • Monte Carlo",
     "step1_name": "Étape 1 — Données",
@@ -296,6 +297,7 @@
   },
   "en": {
     "lang_selector": "🌐 Language",
+    "tz_selector": "🕐 Timezone",
     "app_title": "🏆 WC 2026 Predictor — Monte Carlo + Poisson",
     "app_caption": "FIFA World Cup 2026 Simulator • 48 teams • 12 groups • Monte Carlo",
     "step1_name": "Step 1 — Data",
@@ -591,6 +593,7 @@
   },
   "pt": {
     "lang_selector": "🌐 Idioma",
+    "tz_selector": "🕐 Fuso horário",
     "app_title": "🏆 WC 2026 Predictor — Monte Carlo + Poisson",
     "app_caption": "Simulador da Copa do Mundo 2026 • 48 equipes • 12 grupos • Monte Carlo",
     "step1_name": "Etapa 1 — Dados",
@@ -842,6 +845,7 @@
   },
   "es": {
     "lang_selector": "🌐 Idioma",
+    "tz_selector": "🕐 Zona horaria",
     "app_title": "🏆 WC 2026 Predictor — Monte Carlo + Poisson",
     "app_caption": "Simulador de la Copa del Mundo 2026 • 48 equipos • 12 grupos • Monte Carlo",
     "step1_name": "Paso 1 — Datos",
@@ -1093,6 +1097,7 @@
   },
   "de": {
     "lang_selector": "🌐 Sprache",
+    "tz_selector": "🕐 Zeitzone",
     "app_title": "🏆 WC 2026 Predictor — Monte Carlo + Poisson",
     "app_caption": "WM 2026 Simulator • 48 Teams • 12 Gruppen • Monte Carlo",
     "step1_name": "Schritt 1 — Daten",
@@ -1344,6 +1349,7 @@
   },
   "ja": {
     "lang_selector": "🌐 言語",
+    "tz_selector": "🕐 タイムゾーン",
     "app_title": "🏆 WC 2026 Predictor — Monte Carlo + Poisson",
     "app_caption": "2026 FIFAワールドカップ シミュレーター • 48チーム • 12グループ • モンテカルロ",
     "step1_name": "ステップ1 — データ",
@@ -1595,6 +1601,7 @@
   },
   "ko": {
     "lang_selector": "🌐 언어",
+    "tz_selector": "🕐 시간대",
     "app_title": "🏆 WC 2026 Predictor — Monte Carlo + Poisson",
     "app_caption": "2026 FIFA 월드컵 시뮬레이터 • 48개 팀 • 12개 그룹 • 몬테카를로",
     "step1_name": "단계 1 — 데이터",

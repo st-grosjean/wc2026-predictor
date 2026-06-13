@@ -42,6 +42,8 @@ if "focus_team" in _prefs:
     st.session_state["focus_team"] = _prefs["focus_team"]
 if "lang" in _prefs and st.session_state["lang"] == "fr":
     st.session_state["lang"] = _prefs["lang"]
+if "tz" in _prefs and st.session_state["tz"] == "Europe/Paris":
+    st.session_state["tz"] = _prefs["tz"]
 
 lang = st.session_state.get("lang", "fr")
 

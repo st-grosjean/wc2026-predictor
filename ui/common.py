@@ -8,7 +8,7 @@ from pathlib import Path
 import streamlit as st
 
 import config
-from src.i18n import t
+from src.i18n import fmt_time_local, t
 from src.tournament import _assign_third_place
 
 # ---------------------------------------------------------------------------
@@ -28,6 +28,7 @@ DEFAULTS: dict = {
     "h2h_top": [],
     "focus_team": "France",
     "lang": "fr",
+    "tz": "Europe/Paris",
     "last_recalib_n_played": -1,
     "last_recalib_time": None,
 }
@@ -213,7 +214,11 @@ def _load_schedule() -> dict[tuple, dict]:
         return {}
     with _SCHEDULE_PATH.open("r", encoding="utf-8") as f:
         raw = json.load(f)
-    return {(m["home"], m["away"]): m for m in raw.get("group_matches", [])}
+    lkp: dict[tuple, dict] = {}
+    for m in raw.get("group_matches", []):
+        lkp[(m["home"], m["away"])] = m
+        lkp[(m["away"], m["home"])] = m
+    return lkp
 
 
 @st.cache_data
@@ -266,7 +271,9 @@ def _ko_match_input(
             _v  = sched.get("venue", "")
             _pts = _d.split("-")
             _ddmm = f"{_pts[2]}/{_pts[1]}" if len(_pts) == 3 else _d
-            _date_label = f"🗓 {_ddmm} · {_t_}Z"
+            _tz  = st.session_state.get("tz", "Europe/Paris")
+            _tl  = fmt_time_local(_d, _t_, _tz, lang) if _t_ else f"{_t_}Z"
+            _date_label = f"🗓 {_ddmm} · {_tl}"
             try:
                 _past = datetime.strptime(_d, "%Y-%m-%d").date() < date.today()
             except Exception:
