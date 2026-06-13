@@ -5,7 +5,7 @@ import streamlit as st
 
 import config
 from src.fetcher import fetch_live_wc_scores
-from src.i18n import t
+from src.i18n import fmt_time_local, t
 from ui.common import (
     _group_standings, _init_gr, _load_gr, _load_schedule, _save_gr,
     load_teams_json,
@@ -78,7 +78,13 @@ def render_tab_groups(lang: str) -> None:
                         _mk   = f"{_grp}_{_mi}"
                         _si   = _sched_lkp.get((_m["home"], _m["away"]), {})
                         _md_lbl = f"J{_si['matchday']} · " if _si.get("matchday") else ""
-                        _dt_lbl = f"{_si.get('date', '')} {_si.get('time_utc', '')}Z" if _si.get("date") else ""
+                        if _si.get("date") and _si.get("time_utc"):
+                            _tz = st.session_state.get("tz", "Europe/Paris")
+                            _dt_lbl = fmt_time_local(_si["date"], _si["time_utc"], _tz, lang)
+                        elif _si.get("date"):
+                            _dt_lbl = _si["date"]
+                        else:
+                            _dt_lbl = ""
                         _vn_lbl = _si.get("venue", "").split(",")[0] if _si.get("venue") else ""
                         _full_lbl = f"{_md_lbl}{_dt_lbl}" + (f" · {_vn_lbl}" if _vn_lbl else "")
                         _mca, _mcb, _mcc, _mcd, _mce = st.columns([3.8, 1.1, 0.3, 1.1, 1.7])

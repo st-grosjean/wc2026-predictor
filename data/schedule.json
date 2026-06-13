@@ -65,7 +65,7 @@
       "match_id": "G_B1",
       "group": "B",
       "home": "Canada",
-      "away": "Bosnia and Herzegovina",
+      "away": "Bosnia-Herzegovina",
       "date": "2026-06-12",
       "time_utc": "19:00",
       "venue": "BMO Field, Toronto",
@@ -85,7 +85,7 @@
       "match_id": "G_B3",
       "group": "B",
       "home": "Switzerland",
-      "away": "Bosnia and Herzegovina",
+      "away": "Bosnia-Herzegovina",
       "date": "2026-06-18",
       "time_utc": "19:00",
       "venue": "SoFi Stadium, Inglewood CA",
@@ -114,7 +114,7 @@
     {
       "match_id": "G_B6",
       "group": "B",
-      "home": "Bosnia and Herzegovina",
+      "home": "Bosnia-Herzegovina",
       "away": "Qatar",
       "date": "2026-06-24",
       "time_utc": "19:00",
@@ -276,8 +276,8 @@
       "group": "E",
       "home": "Ecuador",
       "away": "Curaçao",
-      "date": "2026-06-21",
-      "time_utc": "00:00",
+      "date": "2026-06-20",
+      "time_utc": "23:00",
       "venue": "Arrowhead Stadium, Kansas City MO",
       "matchday": 2
     },
@@ -516,7 +516,7 @@
       "group": "I",
       "home": "Norway",
       "away": "Senegal",
-      "date": "2026-06-22",
+      "date": "2026-06-23",
       "time_utc": "00:00",
       "venue": "MetLife Stadium, East Rutherford NJ",
       "matchday": 2
@@ -1013,3 +1013,4 @@
     }
   ]
 }
+
