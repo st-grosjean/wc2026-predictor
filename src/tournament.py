@@ -36,6 +36,41 @@ def load_groups() -> dict[str, list[str]]:
         return json.load(f)["groups"]
 
 
+def _load_ko_played() -> dict[tuple[str, int], str]:
+    """
+    Load played KO results from data/ko_results.json.
+    Returns {(round, match_idx): 'home'|'away'} for each decisively played match.
+    round ∈ {'r32','r16','qf','sf','final'}; match_idx is 0-based per R32_BRACKET/
+    R16_PAIRS/QF_PAIRS/SF_PAIRS order.
+    """
+    path = Path("data") / "ko_results.json"
+    if not path.exists():
+        return {}
+    with path.open("r", encoding="utf-8") as f:
+        data = json.load(f)
+    played: dict[tuple[str, int], str] = {}
+    for rnd in ("r32", "r16", "qf", "sf"):
+        for idx, m in enumerate(data.get(rnd, [])):
+            if (m.get("played")
+                    and m.get("goals_h") is not None
+                    and m.get("goals_a") is not None):
+                gh, ga = int(m["goals_h"]), int(m["goals_a"])
+                if gh > ga:
+                    played[(rnd, idx)] = "home"
+                elif ga > gh:
+                    played[(rnd, idx)] = "away"
+    fin = data.get("final", {})
+    if (fin.get("played")
+            and fin.get("goals_h") is not None
+            and fin.get("goals_a") is not None):
+        gh, ga = int(fin["goals_h"]), int(fin["goals_a"])
+        if gh > ga:
+            played[("final", 0)] = "home"
+        elif ga > gh:
+            played[("final", 0)] = "away"
+    return played
+
+
 # ---------------------------------------------------------------------------
 # Official R32 bracket — third-place placement
 # ---------------------------------------------------------------------------
@@ -56,6 +91,21 @@ _THIRD_PLACE_CONSTRAINTS: dict[str, frozenset[str]] = {
     "L": frozenset("EHIJK"),    # M80: W-L vs 3rd from E,H,I,J,K  [ESPN]
 }
 
+# Official 3rd-place draw (FIFA WC 2026, announced post-group-stage).
+# Annex C allows multiple valid bipartite matchings for some qualifying-group
+# combinations; the backtracking finds the first valid solution (alphabetical order)
+# which differs from the actual FIFA draw. This override stores confirmed results.
+# Key = sorted tuple of 8 qualifying groups; value = {winner_slot: third_grp}.
+_OFFICIAL_THIRD_PLACE_DRAW: dict[tuple[str, ...], dict[str, str]] = {
+    # Actual WC2026: groups B,D,E,F,I,J,K,L produced the 8 best 3rd-place teams.
+    # M79:1A-3E, M85:1B-3J, M81:1D-3B, M74:1E-3D, M82:1G-3I, M77:1I-3F,
+    # M87:1K-3L, M80:1L-3K  (source: official FIFA bracket publication)
+    ('B', 'D', 'E', 'F', 'I', 'J', 'K', 'L'): {
+        "A": "E", "B": "J", "D": "B", "E": "D",
+        "G": "I", "I": "F", "K": "L", "L": "K",
+    },
+}
+
 # Sorted tuple of the 8 WvT slot labels (= groups whose winner hosts a 3rd-place team)
 _WVT_SLOTS: tuple[str, ...] = tuple(sorted(_THIRD_PLACE_CONSTRAINTS))
 
@@ -65,14 +115,18 @@ def _assign_third_place(qualifying_groups: tuple[str, ...]) -> dict[str, str]:
     """
     Assign 8 qualifying 3rd-place groups to the 8 WvT R32 slots.
 
-    Uses backtracking bipartite matching against _THIRD_PLACE_CONSTRAINTS (official
-    ESPN/FIFA eligible-group sets). Result is cached — at most 495 unique inputs.
+    Checks _OFFICIAL_THIRD_PLACE_DRAW first (known FIFA draw results).
+    Falls back to backtracking bipartite matching against _THIRD_PLACE_CONSTRAINTS
+    for hypothetical Monte Carlo combinations. Result is cached (≤495 inputs).
 
     Args:
         qualifying_groups: sorted tuple of 8 group letters (e.g. ('A','B','C',...))
     Returns:
         {winner_slot_group: qualifying_group} e.g. {'A': 'F', 'B': 'J', ...}
     """
+    if qualifying_groups in _OFFICIAL_THIRD_PLACE_DRAW:
+        return dict(_OFFICIAL_THIRD_PLACE_DRAW[qualifying_groups])
+
     remaining = list(qualifying_groups)
     assignment: dict[str, str] = {}
 
@@ -176,8 +230,45 @@ SF_PAIRS: list[tuple[int, int]] = [
 # ---------------------------------------------------------------------------
 
 def _group_rank_key(row: dict) -> tuple:
-    """Ranking criteria: pts, GD, GF, then team name (alphabetical tiebreak)."""
-    return (-row["pts"], -row["gd"], -row["gf"], row["team"])
+    """Primary pts-only key — used by _simulate_group for initial grouping."""
+    return (-row["pts"],)
+
+
+def _build_sort_key(
+    row: dict,
+    tied_names: set[str],
+    match_results: dict[tuple[str, str], tuple[int, int]],
+    att_rating: float,
+) -> tuple:
+    """Full FIFA WC2026 tiebreaker key for a team within a same-pts group.
+
+    Order (per official regulations):
+      1. H2H pts among tied teams
+      2. H2H GD among tied teams
+      3. H2H GF among tied teams
+      4. Overall GD (fallthrough when H2H doesn't resolve)
+      5. Overall GF
+      6. Fair-play: not tracked → constant 0
+      7. ELO proxy (att_rating as FIFA-ranking surrogate)
+      8. Alphabetical — absolute last resort, guarantees uniqueness
+    """
+    t = row["team"]
+    opponents = tied_names - {t}
+    h_pts = h_gd = h_gf = 0
+    for (h, a), (hg, ag) in match_results.items():
+        if h == t and a in opponents:
+            h_gf += hg
+            h_gd += hg - ag
+            if hg > ag:   h_pts += 3
+            elif hg < ag: pass
+            else:         h_pts += 1
+        elif a == t and h in opponents:
+            h_gf += ag
+            h_gd += ag - hg
+            if ag > hg:   h_pts += 3
+            elif hg > ag: pass
+            else:         h_pts += 1
+    return (-h_pts, -h_gd, -h_gf, -row["gd"], -row["gf"], 0, -att_rating, t)
 
 
 def _simulate_group(
@@ -185,24 +276,33 @@ def _simulate_group(
     coeffs: dict[str, dict],
     mu: float,
     rng: np.random.Generator,
+    played_results: dict[tuple[str, str], tuple[int, int]] | None = None,
 ) -> list[dict]:
     """
     Simulate all 6 group matches. Return list of dicts sorted by rank.
     Each dict: {team, pts, gd, gf, ga, w, d, l}
+    Matches already played (in played_results) use real scores; others use Poisson.
     """
     stats = {t: {"team": t, "pts": 0, "gd": 0, "gf": 0, "ga": 0, "w": 0, "d": 0, "l": 0}
              for t in teams}
+    # Track per-match scores for H2H tiebreaking
+    match_results: dict[tuple[str, str], tuple[int, int]] = {}
 
+    played = played_results or {}
     for i in range(len(teams)):
         for j in range(i + 1, len(teams)):
             h, a = teams[i], teams[j]
-            ch = coeffs[h]
-            ca = coeffs[a]
-            hg, ag, _ = simulate_match(
-                ch["att_rating"], ch["def_rating"],
-                ca["att_rating"], ca["def_rating"],
-                mu=mu, is_knockout=False, rng=rng,
-            )
+            if (h, a) in played:
+                hg, ag = played[(h, a)]
+            else:
+                ch = coeffs[h]
+                ca = coeffs[a]
+                hg, ag, _ = simulate_match(
+                    ch["att_rating"], ch["def_rating"],
+                    ca["att_rating"], ca["def_rating"],
+                    mu=mu, is_knockout=False, rng=rng,
+                )
+            match_results[(h, a)] = (hg, ag)
             stats[h]["gf"] += hg
             stats[h]["ga"] += ag
             stats[a]["gf"] += ag
@@ -217,10 +317,30 @@ def _simulate_group(
                 stats[h]["pts"] += 1; stats[h]["d"] += 1
                 stats[a]["pts"] += 1; stats[a]["d"] += 1
 
-    ranked = sorted(stats.values(), key=_group_rank_key)
-    for pos, row in enumerate(ranked):
+    # FIFA WC2026 ranking: group by pts, then H2H → overall GD/GF → ELO → alpha
+    from collections import defaultdict as _dd
+    pts_grps: dict[int, list[dict]] = _dd(list)
+    for row in stats.values():
+        pts_grps[row["pts"]].append(row)
+
+    final_ranked: list[dict] = []
+    for pts_val in sorted(pts_grps.keys(), reverse=True):
+        grp = pts_grps[pts_val]
+        if len(grp) == 1:
+            final_ranked.append(grp[0])
+        else:
+            tied_names = {r["team"] for r in grp}
+            final_ranked.extend(sorted(
+                grp,
+                key=lambda r: _build_sort_key(
+                    r, tied_names, match_results,
+                    coeffs.get(r["team"], {}).get("att_rating", 1.0),
+                ),
+            ))
+
+    for pos, row in enumerate(final_ranked):
         row["position"] = pos + 1
-    return ranked
+    return final_ranked
 
 
 def _best_third_rank_key(row: dict) -> tuple:
@@ -291,10 +411,31 @@ def simulate_tournament(
             if t not in coeffs:
                 coeffs[t] = {"att_rating": 1.0, "def_rating": 1.0}
 
+    # Load real match results — both orderings stored for O(1) lookup
+    all_played: dict[str, dict[tuple[str, str], tuple[int, int]]] = {}
+    gr_path = Path("data") / "group_results.json"
+    if gr_path.exists():
+        with gr_path.open("r", encoding="utf-8") as f:
+            gr_data = json.load(f)
+        for grp, grp_data in gr_data.items():
+            grp_played: dict[tuple[str, str], tuple[int, int]] = {}
+            for match in grp_data.get("matches", []):
+                if (match.get("played")
+                        and match["home_goals"] is not None
+                        and match["away_goals"] is not None):
+                    h, a = match["home"], match["away"]
+                    hg, ag = int(match["home_goals"]), int(match["away_goals"])
+                    grp_played[(h, a)] = (hg, ag)
+                    grp_played[(a, h)] = (ag, hg)
+            if grp_played:
+                all_played[grp] = grp_played
+
+    ko_played = _load_ko_played()
+
     # ----- Group stage -----
     group_results: dict[str, list[dict]] = {}
     for grp, members in groups.items():
-        group_results[grp] = _simulate_group(members, coeffs, mu, rng)
+        group_results[grp] = _simulate_group(members, coeffs, mu, rng, all_played.get(grp))
 
     # Track which round each team reached
     results = {t: {
@@ -331,10 +472,16 @@ def simulate_tournament(
 
     # ----- R32 (16 matches) -----
     r32_winners: list[str] = []
-    for slot_h, slot_a in R32_BRACKET:
+    for k, (slot_h, slot_a) in enumerate(R32_BRACKET):
         th = slot_team[slot_h]
         ta = slot_team[slot_a]
-        winner = _ko_match(th, ta, coeffs, mu, rng)
+        side = ko_played.get(("r32", k))
+        if side == "home":
+            winner = th
+        elif side == "away":
+            winner = ta
+        else:
+            winner = _ko_match(th, ta, coeffs, mu, rng)
         r32_winners.append(winner)
 
     # ----- R16 -----
@@ -343,8 +490,14 @@ def simulate_tournament(
             results[w]["r16"] = True
 
     r16_winners: list[str] = []
-    for i, j in R16_PAIRS:
-        winner = _ko_match(r32_winners[i], r32_winners[j], coeffs, mu, rng)
+    for k, (i, j) in enumerate(R16_PAIRS):
+        side = ko_played.get(("r16", k))
+        if side == "home":
+            winner = r32_winners[i]
+        elif side == "away":
+            winner = r32_winners[j]
+        else:
+            winner = _ko_match(r32_winners[i], r32_winners[j], coeffs, mu, rng)
         r16_winners.append(winner)
 
     # ----- QF -----
@@ -353,8 +506,14 @@ def simulate_tournament(
             results[w]["qf"] = True
 
     qf_winners: list[str] = []
-    for i, j in QF_PAIRS:
-        winner = _ko_match(r16_winners[i], r16_winners[j], coeffs, mu, rng)
+    for k, (i, j) in enumerate(QF_PAIRS):
+        side = ko_played.get(("qf", k))
+        if side == "home":
+            winner = r16_winners[i]
+        elif side == "away":
+            winner = r16_winners[j]
+        else:
+            winner = _ko_match(r16_winners[i], r16_winners[j], coeffs, mu, rng)
         qf_winners.append(winner)
 
     # ----- SF -----
@@ -363,9 +522,14 @@ def simulate_tournament(
             results[w]["sf"] = True
 
     sf_winners: list[str] = []
-    for i, j in SF_PAIRS:
-        th, ta = qf_winners[i], qf_winners[j]
-        winner = _ko_match(th, ta, coeffs, mu, rng)
+    for k, (i, j) in enumerate(SF_PAIRS):
+        side = ko_played.get(("sf", k))
+        if side == "home":
+            winner = qf_winners[i]
+        elif side == "away":
+            winner = qf_winners[j]
+        else:
+            winner = _ko_match(qf_winners[i], qf_winners[j], coeffs, mu, rng)
         sf_winners.append(winner)
 
     # ----- Final -----
@@ -373,7 +537,13 @@ def simulate_tournament(
         if w in results:
             results[w]["final"] = True
 
-    champion = _ko_match(sf_winners[0], sf_winners[1], coeffs, mu, rng)
+    side = ko_played.get(("final", 0))
+    if side == "home":
+        champion = sf_winners[0]
+    elif side == "away":
+        champion = sf_winners[1]
+    else:
+        champion = _ko_match(sf_winners[0], sf_winners[1], coeffs, mu, rng)
     if champion in results:
         results[champion]["winner"] = True
 
