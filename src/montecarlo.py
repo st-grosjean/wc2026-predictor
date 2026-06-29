@@ -4,8 +4,10 @@ Uses numpy vectorisation for the group stage and sequential KO rounds.
 """
 from __future__ import annotations
 
+import json
 import logging
 import time
+from pathlib import Path
 from typing import Callable
 
 import numpy as np
@@ -16,6 +18,7 @@ from src.tournament import (
     R32_BRACKET, R16_PAIRS, QF_PAIRS, SF_PAIRS,
     _group_rank_key, _best_third_rank_key,
     _assign_third_place, _WVT_SLOTS,
+    _load_ko_played,
 )
 
 logger = logging.getLogger(__name__)
@@ -34,6 +37,7 @@ def _vec_group_stage(
     N: int,
     rng: np.random.Generator,
     h2h_mat: np.ndarray,
+    played_results: dict[str, dict[tuple[str, str], tuple[int, int]]] | None = None,
 ) -> tuple[dict[str, np.ndarray], dict[str, tuple]]:
     """
     Simulate group stage for all N tournaments at once.
@@ -56,14 +60,27 @@ def _vec_group_stage(
         gd = np.zeros((n_teams, N), dtype=np.int32)
         gf = np.zeros((n_teams, N), dtype=np.int32)
 
+        # Per-pair match scores (local indices, i < j) — used for H2H tiebreaking
+        match_hg: dict[tuple[int, int], np.ndarray] = {}
+        match_ag: dict[tuple[int, int], np.ndarray] = {}
+
+        grp_played = played_results.get(grp, {}) if played_results else {}
         for i in range(n_teams):
             for j in range(i + 1, n_teams):
-                h2h_score = h2h_mat[mi[i], mi[j]]
-                h2h_factor = 1.0 + config.H2H_WEIGHT * h2h_score
-                lam_h = att[mi[i]] * def_[mi[j]] * mu * h2h_factor
-                lam_a = att[mi[j]] * def_[mi[i]] * mu / h2h_factor
-                hg = rng.poisson(lam_h, size=N).astype(np.int32)
-                ag = rng.poisson(lam_a, size=N).astype(np.int32)
+                key = (members[i], members[j])
+                if key in grp_played:
+                    hg_real, ag_real = grp_played[key]
+                    hg = np.full(N, hg_real, dtype=np.int32)
+                    ag = np.full(N, ag_real, dtype=np.int32)
+                else:
+                    h2h_score = h2h_mat[mi[i], mi[j]]
+                    h2h_factor = 1.0 + config.H2H_WEIGHT * h2h_score
+                    lam_h = att[mi[i]] * def_[mi[j]] * mu * h2h_factor
+                    lam_a = att[mi[j]] * def_[mi[i]] * mu / h2h_factor
+                    hg = rng.poisson(lam_h, size=N).astype(np.int32)
+                    ag = rng.poisson(lam_a, size=N).astype(np.int32)
+                match_hg[(i, j)] = hg
+                match_ag[(i, j)] = ag
                 gf[i] += hg; gf[j] += ag
                 diff = hg - ag
                 gd[i] += diff; gd[j] -= diff
@@ -73,23 +90,78 @@ def _vec_group_stage(
                 pts[i] += 3 * home_wins + draws
                 pts[j] += 3 * away_wins + draws
 
-        # Sort: primary pts desc, secondary gd desc, tertiary gf desc
-        # Use lexsort: last key is primary (reversed for ascending sort)
-        # Shape: sort_key[k, sim], we want argsort over k axis for each sim
-        # Build composite sort key: pack into (N, n_teams) then argsort
-        sort_matrix = np.stack([pts, gd, gf], axis=0)  # (3, n_teams, N)
-        # For each simulation, argsort teams by (-pts, -gd, -gf)
-        # Transpose to (N, n_teams, 3)
-        sm = sort_matrix.transpose(2, 1, 0)  # (N, n_teams, 3)
-        # Negate for descending order
-        sm_neg = -sm
-        # Lexsort: last axis is primary. Reorganise: (n_teams, N, 3) → per-sim argsort
-        # Use np.lexsort on each column: iterate over N (unavoidable for stability)
-        # Vectorised alternative using structured arrays or a single sort trick:
-        # Combine into a single score (pts*10000 + gd*100 + gf)
-        combined = pts * 10_000 + gd * 100 + gf  # (n_teams, N)
-        # argsort descending along team axis for each simulation
-        rankings = np.argsort(-combined, axis=0)  # (n_teams, N) — rank order of team indices
+        # FIFA WC2026 ranking: pts primary, then H2H → overall GD/GF → ELO → alpha.
+        # Encode as float64: pts * 1e12 so any sub-criterion adjustment (< 1) can't
+        # overflow into the next pts level (1e12 apart).
+        combined_f = pts.astype(np.float64) * 1e12  # (n_teams, N)
+
+        # Detect simulations with pts ties — H2H tiebreaker must run for those.
+        sorted_pts = np.sort(pts, axis=0)                           # (n_teams, N)
+        has_pts_ties = np.any(np.diff(sorted_pts, axis=0) == 0, axis=0)  # (N,)
+        tie_sims = np.where(has_pts_ties)[0]
+
+        for sim_idx in tie_sims:
+            pts_sim = pts[:, sim_idx]
+            gd_sim  = gd[:, sim_idx]
+            gf_sim  = gf[:, sim_idx]
+            # Group local team indices by pts value
+            by_pts: dict[int, list[int]] = {}
+            for k, v in enumerate(pts_sim.tolist()):
+                vi = int(v)
+                if vi not in by_pts:
+                    by_pts[vi] = []
+                by_pts[vi].append(k)
+            for pts_val, tied in by_pts.items():
+                if len(tied) < 2:
+                    continue
+                n_tied = len(tied)
+                h2h_pts_s = [0] * n_tied
+                h2h_gd_s  = [0] * n_tied
+                h2h_gf_s  = [0] * n_tied
+                for pi in range(n_tied):
+                    for pj in range(pi + 1, n_tied):
+                        ti, tj = tied[pi], tied[pj]
+                        # canonical key always has smaller local index first
+                        if ti < tj:
+                            hg_v = int(match_hg[(ti, tj)][sim_idx])
+                            ag_v = int(match_ag[(ti, tj)][sim_idx])
+                        else:
+                            hg_v = int(match_ag[(tj, ti)][sim_idx])
+                            ag_v = int(match_hg[(tj, ti)][sim_idx])
+                        h2h_gf_s[pi] += hg_v
+                        h2h_gf_s[pj] += ag_v
+                        d = hg_v - ag_v
+                        h2h_gd_s[pi] += d
+                        h2h_gd_s[pj] -= d
+                        if hg_v > ag_v:
+                            h2h_pts_s[pi] += 3
+                        elif ag_v > hg_v:
+                            h2h_pts_s[pj] += 3
+                        else:
+                            h2h_pts_s[pi] += 1
+                            h2h_pts_s[pj] += 1
+                # Full tiebreaker key:
+                #   H2H pts → H2H GD → H2H GF
+                #   → overall GD → overall GF
+                #   → att_rating (ELO proxy) → alphabetical
+                order = sorted(
+                    range(n_tied),
+                    key=lambda p: (
+                        -h2h_pts_s[p],
+                        -h2h_gd_s[p],
+                        -h2h_gf_s[p],
+                        -int(gd_sim[tied[p]]),
+                        -int(gf_sim[tied[p]]),
+                        -float(att[mi[tied[p]]]),
+                        members[tied[p]],
+                    ),
+                )
+                # Inject sub-unit adjustments: top-ranked gets +(n-1)*0.1, etc.
+                # Max adjustment for 4 teams = 0.3, well below the 1e12 pts gap.
+                for rank, pos in enumerate(order):
+                    combined_f[tied[pos], sim_idx] += (n_tied - 1 - rank) * 0.1
+
+        rankings = np.argsort(-combined_f, axis=0)  # (n_teams, N)
 
         # Convert team local indices → global team indices
         mi_arr = np.array(mi)
@@ -174,6 +246,29 @@ def run_simulations(
     """
     rng = np.random.default_rng(seed)
     groups = load_groups()
+
+    # Load real match results from group_results.json — store both orderings so
+    # lookup by (members[i], members[j]) always finds the right entry.
+    played_results: dict[str, dict[tuple[str, str], tuple[int, int]]] = {}
+    gr_path = Path("data") / "group_results.json"
+    if gr_path.exists():
+        with gr_path.open("r", encoding="utf-8") as f:
+            gr_data = json.load(f)
+        for grp, grp_data in gr_data.items():
+            grp_played: dict[tuple[str, str], tuple[int, int]] = {}
+            for match in grp_data.get("matches", []):
+                if (match.get("played")
+                        and match["home_goals"] is not None
+                        and match["away_goals"] is not None):
+                    h, a = match["home"], match["away"]
+                    hg, ag = int(match["home_goals"]), int(match["away_goals"])
+                    grp_played[(h, a)] = (hg, ag)
+                    grp_played[(a, h)] = (ag, hg)
+            if grp_played:
+                played_results[grp] = grp_played
+
+    ko_played = _load_ko_played()
+
     teams = sorted(coeffs.keys())
     n_teams = len(teams)
     t2i = {t: i for i, t in enumerate(teams)}
@@ -228,7 +323,9 @@ def run_simulations(
         N = min(batch_size, n_simulations - n_processed)
 
         # === Group stage (vectorised) ===
-        grp_rankings, grp_stats = _vec_group_stage(groups, teams, att, def_, mu, N, rng, h2h_mat)
+        grp_rankings, grp_stats = _vec_group_stage(
+            groups, teams, att, def_, mu, N, rng, h2h_mat, played_results
+        )
         # grp_rankings[grp]: shape (4, N), row 0 = winner
 
         # Accumulate position counts and pts/gf/ga sums
@@ -251,11 +348,29 @@ def run_simulations(
             slot[f"2{grp}"] = ranking[1]
             thirds.append((grp, ranking[2]))
 
-        # Select best 8 3rd-place teams using att_rating as a proxy for group-stage perf.
+        # Select best 8 3rd-place teams by actual pts → gd → gf (FIFA rules).
+        # att_rating proxy was wrong: DR Congo (att=0.4, 4pts/GD+1) was excluded
+        # despite being the strongest 3rd-place finisher.
         thirds_groups = [grp for grp, _ in thirds]
         thirds_stack = np.stack([arr for _, arr in thirds], axis=0)  # (12, N)
-        thirds_att = att[thirds_stack]                                # (12, N)
-        thirds_order = np.argsort(-thirds_att, axis=0)               # (12, N)
+
+        thirds_pts = np.zeros((12, N), dtype=np.int32)
+        thirds_gd  = np.zeros((12, N), dtype=np.int32)
+        thirds_gf  = np.zeros((12, N), dtype=np.int32)
+        _sidx = np.arange(N)
+        for _i, _grp in enumerate(thirds_groups):
+            _mi, _pts_g, _gf_g, _gd_g = grp_stats[_grp]
+            _mi_arr = np.array(_mi)
+            _t3 = thirds_stack[_i]                                   # (N,) global team idx
+            _loc = (_mi_arr[:, None] == _t3[None, :]).argmax(axis=0)  # (N,) local idx
+            thirds_pts[_i] = _pts_g[_loc, _sidx]
+            thirds_gd[_i]  = _gd_g[_loc, _sidx]
+            thirds_gf[_i]  = _gf_g[_loc, _sidx]
+
+        _thirds_key = (thirds_pts.astype(np.float64) * 1e12
+                       + thirds_gd.astype(np.float64) * 1e6
+                       + thirds_gf.astype(np.float64))
+        thirds_order = np.argsort(-_thirds_key, axis=0)              # (12, N) best first
 
         best8_local = thirds_order[:8]                               # (8, N) index into thirds list
         best8 = np.take_along_axis(thirds_stack, best8_local, axis=0)  # (8, N) team indices
@@ -285,6 +400,17 @@ def run_simulations(
                 k_pos = (bg_sub == third_grp).argmax(axis=0)     # (n_batch,) row
                 slot[f"3W_{winner_grp}"][arr_idx] = b8_sub[k_pos, batch_rng]
 
+        if n_processed == 0 and logger.isEnabledFor(logging.DEBUG):
+            q0 = tuple(best8_groups_srt[:, 0])
+            logger.debug("3rd-place qualifying groups (sim 0): %s", q0)
+            for _k, (_sh, _sa) in enumerate(R32_BRACKET):
+                logger.debug(
+                    "  R32[%2d] %-6s vs %-6s  →  %-24s vs %s",
+                    _k, _sh, _sa,
+                    teams[int(slot[_sh][0])],
+                    teams[int(slot[_sa][0])],
+                )
+
         # Mark R32 qualifiers — vectorised
         for sh, sa in R32_BRACKET:
             np.add.at(counts_arr["r32"], slot[sh], 1)
@@ -299,6 +425,14 @@ def run_simulations(
         participants_r32 = np.concatenate([home_slots, away_slots], axis=0)  # (32, N)
         r32_winners = _vec_ko_round(r32_matchups, participants_r32, att, def_, mu, N, rng, h2h_mat)
         # r32_winners: (16, N)
+
+        # Override played R32 results with actual scores
+        for k in range(16):
+            side = ko_played.get(("r32", k))
+            if side == "home":
+                r32_winners[k] = home_slots[k]
+            elif side == "away":
+                r32_winners[k] = away_slots[k]
 
         # Accumulate R32 slot occupancy
         for k in range(16):
@@ -323,6 +457,14 @@ def run_simulations(
         r16_winners = _vec_ko_round(r16_matchups, r16_part, att, def_, mu, N, rng, h2h_mat)
         # r16_winners: (8, N)
 
+        # Override played R16 results
+        for k, (i, j) in enumerate(R16_PAIRS):
+            side = ko_played.get(("r16", k))
+            if side == "home":
+                r16_winners[k] = r32_winners[i]
+            elif side == "away":
+                r16_winners[k] = r32_winners[j]
+
         # Accumulate R16 slot occupancy
         for k in range(8):
             np.add.at(r16_slot_cts[k], r16_winners[k], 1)
@@ -342,7 +484,17 @@ def run_simulations(
         qf_part = r16_winners  # (8, N)
         qf_matchups = [(i, j) for i, j in QF_PAIRS]
         qf_winners = _vec_ko_round(qf_matchups, qf_part, att, def_, mu, N, rng, h2h_mat)
-        # qf_winners: (4, N) — opponent tracking vectorised
+        # qf_winners: (4, N)
+
+        # Override played QF results
+        for k, (i, j) in enumerate(QF_PAIRS):
+            side = ko_played.get(("qf", k))
+            if side == "home":
+                qf_winners[k] = r16_winners[i]
+            elif side == "away":
+                qf_winners[k] = r16_winners[j]
+
+        # Opponent tracking vectorised
         for k, (i, j) in enumerate(QF_PAIRS):
             w = qf_winners[k]; ri = r16_winners[i]; rj = r16_winners[j]
             l = np.where(w == ri, rj, ri)
@@ -361,7 +513,17 @@ def run_simulations(
         sf_part = qf_winners  # (4, N)
         sf_matchups = [(i, j) for i, j in SF_PAIRS]
         sf_winners = _vec_ko_round(sf_matchups, sf_part, att, def_, mu, N, rng, h2h_mat)
-        # sf_winners: (2, N) — opponent tracking vectorised
+        # sf_winners: (2, N)
+
+        # Override played SF results
+        for k, (i, j) in enumerate(SF_PAIRS):
+            side = ko_played.get(("sf", k))
+            if side == "home":
+                sf_winners[k] = qf_winners[i]
+            elif side == "away":
+                sf_winners[k] = qf_winners[j]
+
+        # Opponent tracking vectorised
         for k, (i, j) in enumerate(SF_PAIRS):
             w = sf_winners[k]; ri = qf_winners[i]; rj = qf_winners[j]
             l = np.where(w == ri, rj, ri)
@@ -380,6 +542,14 @@ def run_simulations(
         fin_part = sf_winners  # (2, N)
         fin_winners = _vec_ko_round([(0, 1)], fin_part, att, def_, mu, N, rng, h2h_mat)
         # fin_winners: (1, N)
+
+        # Override played Final result
+        side = ko_played.get(("final", 0))
+        if side == "home":
+            fin_winners[0] = sf_winners[0]
+        elif side == "away":
+            fin_winners[0] = sf_winners[1]
+
         w_fin = fin_winners[0]                                          # (N,)
         l_fin = np.where(w_fin == sf_winners[0], sf_winners[1], sf_winners[0])
 
