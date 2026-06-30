@@ -49,25 +49,38 @@ def _load_ko_played() -> dict[tuple[str, int], str]:
     with path.open("r", encoding="utf-8") as f:
         data = json.load(f)
     played: dict[tuple[str, int], str] = {}
+
+    def _side(m: dict) -> str | None:
+        gh, ga = int(m["goals_h"]), int(m["goals_a"])
+        if gh > ga:
+            return "home"
+        if ga > gh:
+            return "away"
+        # Draw resolved by penalty shootout
+        if m.get("penalties"):
+            ph = int(m.get("penalties_h") or 0)
+            pa = int(m.get("penalties_a") or 0)
+            if ph > pa:
+                return "home"
+            if pa > ph:
+                return "away"
+        return None
+
     for rnd in ("r32", "r16", "qf", "sf"):
         for idx, m in enumerate(data.get(rnd, [])):
             if (m.get("played")
                     and m.get("goals_h") is not None
                     and m.get("goals_a") is not None):
-                gh, ga = int(m["goals_h"]), int(m["goals_a"])
-                if gh > ga:
-                    played[(rnd, idx)] = "home"
-                elif ga > gh:
-                    played[(rnd, idx)] = "away"
+                side = _side(m)
+                if side:
+                    played[(rnd, idx)] = side
     fin = data.get("final", {})
     if (fin.get("played")
             and fin.get("goals_h") is not None
             and fin.get("goals_a") is not None):
-        gh, ga = int(fin["goals_h"]), int(fin["goals_a"])
-        if gh > ga:
-            played[("final", 0)] = "home"
-        elif ga > gh:
-            played[("final", 0)] = "away"
+        side = _side(fin)
+        if side:
+            played[("final", 0)] = side
     return played
 
 
