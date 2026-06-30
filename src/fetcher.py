@@ -448,15 +448,21 @@ def fetch_live_wc_scores() -> list[dict]:
             hg = ft.get("home") if ft.get("home") is not None else ht.get("home")
             ag = ft.get("away") if ft.get("away") is not None else ht.get("away")
 
+        pen   = score.get("penalties") or {}
+        pen_h = pen.get("home")
+        pen_a = pen.get("away")
+
         result.append({
-            "match_id":   m.get("id"),
-            "utc_date":   (m.get("utcDate") or "")[:10],
-            "home_team":  home,
-            "away_team":  away,
-            "status":     status,
-            "stage":      stage,
-            "home_goals": int(hg) if hg is not None else None,
-            "away_goals": int(ag) if ag is not None else None,
+            "match_id":       m.get("id"),
+            "utc_date":       (m.get("utcDate") or "")[:10],
+            "home_team":      home,
+            "away_team":      away,
+            "status":         status,
+            "stage":          stage,
+            "home_goals":     int(hg) if hg is not None else None,
+            "away_goals":     int(ag) if ag is not None else None,
+            "penalties_home": int(pen_h) if pen_h is not None else None,
+            "penalties_away": int(pen_a) if pen_a is not None else None,
         })
 
     return result
