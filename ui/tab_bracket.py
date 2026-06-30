@@ -72,7 +72,10 @@ def render_tab_bracket(lang: str) -> None:
                         try:
                             _live = fetch_live_wc_scores()
                             _api_lkp: dict[tuple, tuple] = {
-                                (_m["home_team"], _m["away_team"]): (_m["home_goals"], _m["away_goals"])
+                                (_m["home_team"], _m["away_team"]): (
+                                    _m["home_goals"], _m["away_goals"],
+                                    _m.get("penalties_home"), _m.get("penalties_away"),
+                                )
                                 for _m in _live
                                 if _m["status"] == "FINISHED" and _m["home_goals"] is not None
                             }
@@ -89,10 +92,17 @@ def render_tab_bracket(lang: str) -> None:
                                 _entry = _ko[stg] if ki is None else _ko[stg][ki]
                                 if _entry.get("played"):
                                     return False
-                                _hg_new, _ag_new = _sc
+                                _hg_new, _ag_new, _ph_new, _pa_new = _sc
                                 if _api_lkp.get((ta, th)) and not _api_lkp.get((th, ta)):
                                     _hg_new, _ag_new = _ag_new, _hg_new
-                                _entry.update({"goals_h": _hg_new, "goals_a": _ag_new, "played": True})
+                                    _ph_new, _pa_new = _pa_new, _ph_new
+                                _upd: dict = {"goals_h": _hg_new, "goals_a": _ag_new, "played": True}
+                                if (_hg_new == _ag_new
+                                        and _ph_new is not None and _pa_new is not None):
+                                    _upd["penalties"] = True
+                                    _upd["penalties_h"] = _ph_new
+                                    _upd["penalties_a"] = _pa_new
+                                _entry.update(_upd)
                                 return True
 
                             _updated = 0

@@ -198,13 +198,16 @@ def _save_ko(data: dict) -> None:
 
 
 def _init_ko() -> dict:
+    def _m():
+        return {"goals_h": None, "goals_a": None, "played": False,
+                "penalties": False, "penalties_h": None, "penalties_a": None}
     return {
-        "r32":         [{"goals_h": None, "goals_a": None, "played": False} for _ in range(16)],
-        "r16":         [{"goals_h": None, "goals_a": None, "played": False} for _ in range(8)],
-        "qf":          [{"goals_h": None, "goals_a": None, "played": False} for _ in range(4)],
-        "sf":          [{"goals_h": None, "goals_a": None, "played": False} for _ in range(2)],
-        "final":       {"goals_h": None, "goals_a": None, "played": False},
-        "third_place": {"goals_h": None, "goals_a": None, "played": False},
+        "r32":         [_m() for _ in range(16)],
+        "r16":         [_m() for _ in range(8)],
+        "qf":          [_m() for _ in range(4)],
+        "sf":          [_m() for _ in range(2)],
+        "final":       _m(),
+        "third_place": _m(),
     }
 
 
@@ -249,6 +252,13 @@ def _ko_team_winner(res: dict, team_h: str, team_a: str) -> str | None:
         return team_h
     if ag > hg:
         return team_a
+    if res.get("penalties"):
+        ph = int(res.get("penalties_h") or 0)
+        pa = int(res.get("penalties_a") or 0)
+        if ph > pa:
+            return team_h
+        if pa > ph:
+            return team_a
     return None
 
 
@@ -261,6 +271,9 @@ def _ko_match_input(
     cur_hg  = int(res.get("goals_h") or 0)
     cur_ag  = int(res.get("goals_a") or 0)
     cur_pl  = bool(res.get("played", False))
+    cur_pen = bool(res.get("penalties", False))
+    cur_ph  = int(res.get("penalties_h") or 0)
+    cur_pa  = int(res.get("penalties_a") or 0)
     wk      = f"{stage}_{idx}"
     teams_known = not (_ko_is_placeholder(team_h) or _ko_is_placeholder(team_a))
 
@@ -301,9 +314,35 @@ def _ko_match_input(
                               key=f"ko_a_{wk}", label_visibility="collapsed")
         pl = _d_col.checkbox(t("played_checkbox", lang), value=cur_pl, key=f"ko_p_{wk}")
 
-    changed = hg != cur_hg or ag != cur_ag or pl != cur_pl
+        # Penalty shootout UI — shown only when played + draw
+        pen = False
+        ph  = 0
+        pa  = 0
+        if pl and int(hg) == int(ag):
+            pen = st.checkbox(t("ko_pen_checkbox", lang), value=cur_pen, key=f"ko_pen_{wk}")
+            if pen:
+                st.caption(t("ko_pen_label", lang))
+                _pc1, _psep, _pc2 = st.columns([2, 0.4, 2])
+                ph = _pc1.number_input(team_h, min_value=0, max_value=30,
+                                       value=cur_ph, step=1, key=f"ko_ph_{wk}")
+                _psep.markdown("<div style='text-align:center;padding-top:22px'>-</div>",
+                               unsafe_allow_html=True)
+                pa = _pc2.number_input(team_a, min_value=0, max_value=30,
+                                       value=cur_pa, step=1, key=f"ko_pa_{wk}")
+                if int(ph) > int(pa):
+                    st.caption(t("ko_pen_winner", lang, team=team_h, ph=int(ph), pa=int(pa)))
+                elif int(pa) > int(ph):
+                    st.caption(t("ko_pen_winner", lang, team=team_a, ph=int(pa), pa=int(ph)))
+                elif int(ph) > 0:
+                    st.warning(t("ko_pen_draw_error", lang))
+
+    changed = (int(hg) != cur_hg or int(ag) != cur_ag or pl != cur_pl
+               or pen != cur_pen or int(ph) != cur_ph or int(pa) != cur_pa)
     if changed:
-        upd = {"goals_h": int(hg), "goals_a": int(ag), "played": pl}
+        upd = {
+            "goals_h": int(hg), "goals_a": int(ag), "played": pl,
+            "penalties": pen, "penalties_h": int(ph), "penalties_a": int(pa),
+        }
         if idx is None:
             ko[stage].update(upd)
         else:
